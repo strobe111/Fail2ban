@@ -24,5 +24,198 @@
     {% block content %}{% endblock %}
 </main>
 <footer>F2BHub &mdash; Fail2ban 多服务器封禁看板</footer>
+
+<!-- Globe toggle button -->
+<button id="globe-btn" title="全球封禁地图">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.1)"/>
+        <path d="M12 2C12 2 15 6 15 12C15 18 12 22 12 22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12 2C12 2 9 6 9 12C9 18 12 22 12 22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M2 12H22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M4 8H20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M4 16H20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="1.5" fill="#58a6ff"/>
+    </svg>
+</button>
+
+<!-- Globe drawer -->
+<div id="globe-drawer">
+    <div id="globe-header">
+        <h2>F2BHub /// 全球封禁</h2>
+        <button id="globe-close">关闭</button>
+    </div>
+    <div id="globe-stats">
+        <div>检测到 <span id="globe-country-count">0</span> 个国家/地区</div>
+        <div>封禁: <span id="globe-total">0</span> 总 / <span id="globe-active">0</span> 活跃</div>
+        <div>状态: <span id="globe-status">就绪</span></div>
+    </div>
+    <div id="globe-area">
+        <div id="globe-loading">加载全球数据...</div>
+    </div>
+</div>
+
+<script src="//unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<script>
+(function() {
+    var COORD_MAP = {
+        'CN':[35.86,104.20],'HK':[22.32,114.17],'TW':[23.70,120.96],'JP':[36.20,138.25],
+        'KR':[35.91,127.77],'SG':[1.35,103.82],'MY':[4.21,101.98],'TH':[15.87,100.99],
+        'VN':[14.06,108.28],'PH':[12.88,121.77],'ID':[-0.79,113.92],'IN':[20.59,78.96],
+        'PK':[30.38,69.35],'BD':[23.69,90.36],'LK':[7.87,80.77],'MM':[21.92,95.96],
+        'KH':[12.57,104.99],'MN':[46.86,103.85],'KZ':[48.02,66.92],'AE':[23.42,53.85],
+        'SA':[23.89,45.08],'IL':[31.05,34.85],'TR':[38.96,35.24],'IR':[32.43,53.69],
+        'IQ':[33.22,43.68],'US':[37.09,-95.71],'CA':[56.13,-106.35],'MX':[23.63,-102.55],
+        'BR':[-14.24,-51.93],'AR':[-38.42,-63.62],'CL':[-35.68,-71.54],'CO':[4.57,-74.30],
+        'PE':[-9.19,-75.02],'VE':[6.42,-66.59],'AU':[-25.27,133.78],'NZ':[-40.90,174.89],
+        'GB':[55.38,-3.44],'IE':[53.41,-8.24],'FR':[46.23,2.21],'DE':[51.17,10.45],
+        'IT':[41.87,12.57],'ES':[40.46,-3.75],'PT':[39.40,-8.22],'NL':[52.13,5.29],
+        'BE':[50.50,4.47],'CH':[46.82,8.23],'AT':[47.52,14.55],'SE':[60.13,18.64],
+        'NO':[60.47,8.47],'FI':[61.92,25.75],'DK':[56.26,9.50],'PL':[51.92,19.15],
+        'CZ':[49.82,15.47],'HU':[47.16,19.50],'RO':[45.94,24.97],'BG':[42.73,25.49],
+        'GR':[39.07,21.82],'UA':[48.38,31.17],'RU':[61.52,105.32],'ZA':[-30.56,22.94],
+        'EG':[26.82,30.80],'NG':[9.08,8.68],'KE':[-0.02,37.91],'ET':[9.15,40.49],
+        'MA':[31.79,-7.09],'DZ':[28.03,1.66],'GH':[7.95,-1.02]
+    };
+
+    var drawer = document.getElementById('globe-drawer');
+    var btn = document.getElementById('globe-btn');
+    var closeBtn = document.getElementById('globe-close');
+    var statusEl = document.getElementById('globe-status');
+    var countEl = document.getElementById('globe-country-count');
+    var totalEl = document.getElementById('globe-total');
+    var activeEl = document.getElementById('globe-active');
+    var area = document.getElementById('globe-area');
+    var loading = document.getElementById('globe-loading');
+
+    var globeInst = null;
+    var isOpen = false;
+    var lastCodes = null;
+
+    function toggle() {
+        isOpen = !isOpen;
+        if (isOpen) {
+            drawer.classList.add('active');
+            btn.style.display = 'none';
+            loadGlobe();
+        } else {
+            drawer.classList.remove('active');
+            btn.style.display = 'flex';
+        }
+    }
+
+    btn.addEventListener('click', toggle);
+    closeBtn.addEventListener('click', toggle);
+
+    function loadGlobe() {
+        statusEl.textContent = '加载中...';
+        fetch('/api/globe').then(function(r) { return r.json(); }).then(function(data) {
+            totalEl.textContent = data.total_bans;
+            activeEl.textContent = data.active_bans;
+            countEl.textContent = data.countries.length;
+            statusEl.textContent = '在线';
+            buildGlobe(data.countries);
+        }).catch(function(e) {
+            statusEl.textContent = '加载失败';
+            console.error('Globe data error:', e);
+        });
+    }
+
+    function buildGlobe(countries) {
+        var points = [];
+        var arcs = [];
+        var centerCoord = null;
+
+        countries.forEach(function(c) {
+            var coord = COORD_MAP[c.code];
+            if (!coord) return;
+            if (!centerCoord) centerCoord = coord;
+            points.push({ code: c.code, lat: coord[0], lng: coord[1], total: c.total, active: c.active });
+        });
+
+        if (centerCoord) {
+            points.forEach(function(p) {
+                if (p.code !== countries[0].code) {
+                    arcs.push({
+                        startLat: centerCoord[0], startLng: centerCoord[1],
+                        endLat: p.lat, endLng: p.lng
+                    });
+                }
+            });
+        }
+
+        lastCodes = countries.map(function(c) { return c.code; }).sort().join(',');
+
+        if (globeInst) {
+            globeInst.pointsData(points);
+            globeInst.arcsData(arcs);
+            globeInst.htmlElementsData(points);
+            return;
+        }
+
+        if (loading) loading.remove();
+
+        var globe = Globe();
+        globe(area);
+        globe.width(area.clientWidth);
+        globe.height(area.clientHeight);
+        globe.backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png');
+        globe.globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg');
+        globe.bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png');
+        globe.atmosphereColor('rgba(88, 166, 255, 0.6)');
+        globe.atmosphereAltitude(0.2);
+
+        globe.pointsData(points);
+        globe.pointColor(function(d) { return d.active > 0 ? '#f85149' : '#58a6ff'; });
+        globe.pointAltitude(0.02);
+        globe.pointRadius(function(d) { return Math.max(0.3, Math.min(1.2, 0.3 + d.total * 0.02)); });
+
+        globe.ringsData(points);
+        globe.ringColor(function() { return '#58a6ff'; });
+        globe.ringMaxRadius(4);
+        globe.ringPropagationSpeed(3);
+        globe.ringRepeatPeriod(800);
+
+        globe.htmlElementsData(points);
+        globe.htmlLat(function(d) { return d.lat; });
+        globe.htmlLng(function(d) { return d.lng; });
+        globe.htmlAltitude(0.01);
+        globe.htmlElement(function(d) {
+            var el = document.createElement('div');
+            el.className = 'globe-label';
+            el.innerHTML = '<span class="label-name">' + d.code + '</span><span class="label-count">' + d.active + '/' + d.total + '</span>';
+            return el;
+        });
+
+        globe.arcsData(arcs);
+        globe.arcColor(function() { return ['rgba(88, 166, 255, 0.4)', 'rgba(248, 81, 73, 0.4)']; });
+        globe.arcDashLength(0.6);
+        globe.arcDashGap(0.2);
+        globe.arcDashAnimateTime(2000);
+        globe.arcStroke(0.8);
+        globe.arcAltitude(0.25);
+
+        var center = countries.find(function(c) { return c.code === 'CN'; }) || countries[0];
+        var cc = COORD_MAP[center.code] || [20, 0];
+        globe.pointOfView({ lat: cc[0], lng: cc[1], altitude: 2.5 });
+
+        globe.controls().autoRotate = true;
+        globe.controls().autoRotateSpeed = 0.6;
+        globe.controls().enableZoom = true;
+
+        globeInst = globe;
+    }
+
+    window.addEventListener('resize', function() {
+        if (isOpen && globeInst) {
+            globeInst.width(area.clientWidth);
+            globeInst.height(area.clientHeight);
+        }
+    });
+
+    setInterval(function() {
+        if (isOpen) loadGlobe();
+    }, 60000);
+})();
+</script>
 </body>
 </html>

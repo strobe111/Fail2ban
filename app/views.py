@@ -1,6 +1,7 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Server, Ban
+from app.geoip import lookup
 
 
 def _mask_ip(ip):
@@ -91,6 +92,28 @@ def bans():
     pagination = query.order_by(Ban.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
     jails = db.session.query(Ban.jail).distinct().all()
     return _render("bans.html", pagination=pagination, jails=[j[0] for j in jails], filters=request.args)
+
+
+@views_bp.route("/api/globe")
+def globe_data():
+    from collections import Counter
+    ips = [b.ip for b in Ban.query.with_entities(Ban.ip).distinct().all()]
+    active_ips = [b.ip for b in Ban.query.filter(Ban.unban_timestamp.is_(None)).with_entities(Ban.ip).distinct().all()]
+    country_counts = Counter()
+    active_counts = Counter()
+    for ip in ips:
+        code = lookup(ip)
+        if code:
+            country_counts[code] += 1
+    for ip in active_ips:
+        code = lookup(ip)
+        if code:
+            active_counts[code] += 1
+    return jsonify({
+        "countries": [{"code": c, "total": country_counts[c], "active": active_counts.get(c, 0)} for c in sorted(country_counts)],
+        "total_bans": Ban.query.count(),
+        "active_bans": Ban.query.filter(Ban.unban_timestamp.is_(None)).count(),
+    })
 
 
 def _render(template, **context):
