@@ -42,6 +42,10 @@ a:hover { text-decoration: underline; }
 .threat-column { display: flex; flex-direction: row; gap: 4px; align-items: center; }
 .threat-cell { padding: 8px 6px; text-align: center; vertical-align: middle; }
 
+.legend-inline { float: right; display: flex; gap: 14px; font-size: 12px; color: #8b949e; }
+.legend-inline .legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-inline .threat-block { width: 14px; height: 8px; display: inline-block; vertical-align: middle; }
+
 .legend { margin-top: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8b949e; }
 .legend-item .threat-block { width: 12px; height: 10px; display: inline-block; vertical-align: middle; }

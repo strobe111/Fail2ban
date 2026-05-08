@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}服务器列表 - F2BHub{% endblock %}
 {% block content %}
-<h1>服务器列表</h1>
+<h1>服务器列表
+    <span class="legend-inline">
+        <span class="legend-item"><span class="threat-block threat-green"></span> 安全</span>
+        <span class="legend-item"><span class="threat-block threat-yellow"></span> 警告</span>
+        <span class="legend-item"><span class="threat-block threat-red"></span> 危险</span>
+    </span>
+</h1>
 <table>
     <thead><tr><th>主机名</th><th>安全状态 (近8小时)</th><th>在线</th><th>封禁中</th><th>封禁总计</th><th>最后心跳</th></tr></thead>
     <tbody>
@@ -23,9 +29,4 @@
     {% endfor %}
     </tbody>
 </table>
-<div class="legend">
-    <span class="legend-item"><span class="threat-block threat-green" style="width:14px;height:8px;"></span> 安全 — 该小时无封禁</span>
-    <span class="legend-item"><span class="threat-block threat-yellow" style="width:14px;height:8px;"></span> 警告 — 该小时封禁 ≤10 IP</span>
-    <span class="legend-item"><span class="threat-block threat-red" style="width:14px;height:8px;"></span> 危险 — 该小时封禁 &gt;10 IP</span>
-</div>
 {% endblock %}
