@@ -24,27 +24,47 @@
 - IP 地址脱敏显示
 - Agent 一键远程安装
 
-## 在线安装（推荐）
+## 一键安装
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/install.sh | bash
 ```
 
+安装脚本会自动完成：安装系统依赖（git、python3、fail2ban等）→ 克隆仓库 → 创建 venv → 初始化数据库 → 创建 systemd 服务 → 配置防火墙。
+
+## 管理脚本
+
+安装完成后，使用 `f2b.sh` 管理一切：
+
+```bash
+# 直接运行（交互菜单）
+/opt/F2BHub/f2b.sh
+```
+
+菜单选项：
+
+1. **安装 F2BHub** — 部署 Web 面板及依赖
+2. **配置 Fail2ban** — 选择 jail、设置封禁参数
+3. **生成 Fail2ban Agent** — 生成 API Key 并部署/导出 Agent
+4. **管理 Fail2ban Agent** — 查看状态、重启/停止/删除 Agent
+5. **更新 F2BHub** — git pull + 依赖更新 + 重启服务
+6. **卸载** — 移除 F2BHub 服务和文件
+
+支持 root 和普通用户运行（普通用户自动使用 sudo）。
+
 ## 手动安装
 
 ```bash
-git clone https://github.com/strobe111/Fail2ban.git
-cd Fail2ban
-chmod +x install.sh
-./install.sh
+git clone https://github.com/strobe111/Fail2ban.git /opt/F2BHub
+cd /opt/F2BHub
+chmod +x f2b.sh
+./f2b.sh
 ```
-
-安装脚本克隆仓库到 `/opt/F2BHub`，已有则 `git pull` 更新，然后启动管理菜单。
 
 ## 目录结构
 
 ```
-Fail2ban/
+F2BHub/
 ├── app/                      # Flask Web 应用
 │   ├── __init__.py           # 应用工厂
 │   ├── api.py                # Agent 数据接收 API
@@ -65,7 +85,8 @@ Fail2ban/
 │   └── test_fail2ban.log    # 测试日志
 ├── config.py                 # Flask 配置
 ├── run.py                    # 应用入口
-├── install.sh                # 在线安装引导脚本
+├── f2b.sh                    # 管理脚本（主入口）
+├── install.sh                # 一键在线安装脚本
 └── requirements.txt          # Python 依赖
 ```
 
