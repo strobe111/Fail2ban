@@ -517,6 +517,7 @@ bootstrap() {
         git clone "$REPO" "$INSTALL_DIR"
     fi
     cd "$INSTALL_DIR"
+    chmod +x ./f2b.sh
     exec ./f2b.sh
 }
 
