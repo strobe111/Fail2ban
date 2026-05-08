@@ -497,9 +497,17 @@ uninstall() {
 # 0. Download (first-run bootstrap)
 # -------------------------------------------------------
 bootstrap() {
-    if [ -d "$INSTALL_DIR" ]; then
+    if [ -d "$INSTALL_DIR/.git" ]; then
         info "$INSTALL_DIR 已存在，正在更新..."
         git -C "$INSTALL_DIR" pull
+    elif [ -d "$INSTALL_DIR" ]; then
+        warn "$INSTALL_DIR 已存在但不是 git 仓库，重新克隆..."
+        as_root rm -rf "$INSTALL_DIR"
+        as_root mkdir -p "$INSTALL_DIR"
+        if [ "$(id -u)" != "0" ]; then
+            as_root chown "$USER:$USER" "$INSTALL_DIR"
+        fi
+        git clone "$REPO" "$INSTALL_DIR"
     else
         info "克隆仓库到 $INSTALL_DIR ..."
         as_root mkdir -p "$INSTALL_DIR"
