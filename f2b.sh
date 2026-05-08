@@ -2,7 +2,9 @@
 set -e
 
 # === F2BHub 管理脚本 ===
-INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
+# curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/f2b.sh | bash
+REPO="https://github.com/strobe111/Fail2ban.git"
+INSTALL_DIR="/opt/F2BHub"
 VENV_DIR="$INSTALL_DIR/.venv"
 HUB_PORT=5001
 F2B_LOG="/var/log/fail2ban.log"
@@ -492,6 +494,25 @@ uninstall() {
 }
 
 # -------------------------------------------------------
+# 0. Download (first-run bootstrap)
+# -------------------------------------------------------
+bootstrap() {
+    if [ -d "$INSTALL_DIR" ]; then
+        info "$INSTALL_DIR 已存在，正在更新..."
+        git -C "$INSTALL_DIR" pull
+    else
+        info "克隆仓库到 $INSTALL_DIR ..."
+        as_root mkdir -p "$INSTALL_DIR"
+        if [ "$(id -u)" != "0" ]; then
+            as_root chown "$USER:$USER" "$INSTALL_DIR"
+        fi
+        git clone "$REPO" "$INSTALL_DIR"
+    fi
+    cd "$INSTALL_DIR"
+    exec ./f2b.sh
+}
+
+# -------------------------------------------------------
 # Main Menu
 # -------------------------------------------------------
 main_menu() {
@@ -523,5 +544,19 @@ main_menu() {
         esac
     done
 }
+
+# If running via curl (not from /opt/F2BHub), clone repo first
+if [ ! -f "$INSTALL_DIR/f2b.sh" ]; then
+    # Need git for bootstrap
+    if ! command -v git &>/dev/null; then
+        OS=$(detect_os)
+        if [ "$OS" = "debian" ]; then
+            as_root apt-get update -qq && as_root apt-get install -y -qq git
+        elif [ "$OS" = "rhel" ]; then
+            as_root yum install -y -q git
+        fi
+    fi
+    bootstrap
+fi
 
 main_menu

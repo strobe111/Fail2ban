@@ -27,18 +27,17 @@
 ## 一键安装
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/f2b.sh | bash
 ```
 
-安装脚本会自动完成：安装系统依赖（git、python3、fail2ban等）→ 克隆仓库 → 创建 venv → 初始化数据库 → 创建 systemd 服务 → 配置防火墙。
+下载 `f2b.sh` 到当前目录直接运行，自动完成安装系统依赖 → 部署 Web 面板 → 创建服务 → 配置防火墙，全程交互菜单驱动。
 
 ## 管理脚本
 
-安装完成后，使用 `f2b.sh` 管理一切：
+安装后继续使用 `f2b.sh` 管理一切：
 
 ```bash
-# 直接运行（交互菜单）
-/opt/F2BHub/f2b.sh
+./f2b.sh
 ```
 
 菜单选项：
@@ -57,6 +56,14 @@ curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/install.sh
 ```bash
 git clone https://github.com/strobe111/Fail2ban.git /opt/F2BHub
 cd /opt/F2BHub
+chmod +x f2b.sh
+./f2b.sh
+```
+
+或直接下载管理脚本运行：
+
+```bash
+curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/f2b.sh -o f2b.sh
 chmod +x f2b.sh
 ./f2b.sh
 ```
