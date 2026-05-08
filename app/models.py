@@ -47,7 +47,7 @@ class Server(db.Model):
     def _hour_slot(self, hours_ago):
         """Return (start, end) of a clock-hour slot aligned to :00"""
         from datetime import timedelta
-        now = datetime.utcnow()
+        now = datetime.now()
         current_hour = now.replace(minute=0, second=0, microsecond=0)
         end = current_hour - timedelta(hours=hours_ago)
         start = end - timedelta(hours=1)
@@ -81,8 +81,8 @@ class Server(db.Model):
     def is_online(self):
         if not self.last_heartbeat:
             return False
-        now = datetime.utcnow()
-        delta = now - self.last_heartbeat.replace(tzinfo=None)
+        now = datetime.now()
+        delta = now - self.last_heartbeat.replace(tzinfo=None) if self.last_heartbeat.tzinfo else now - self.last_heartbeat
         return delta.total_seconds() < 180
 
 

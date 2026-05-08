@@ -425,7 +425,21 @@ update_f2bhub() {
 
     if [ -d "$INSTALL_DIR/.git" ]; then
         info "拉取最新代码..."
+        local old_ver=$(cd "$INSTALL_DIR" && git describe --tags 2>/dev/null || git rev-parse --short HEAD)
         git -C "$INSTALL_DIR" pull
+        local new_ver=$(cd "$INSTALL_DIR" && git describe --tags 2>/dev/null || git rev-parse --short HEAD)
+        if [ "$old_ver" != "$new_ver" ]; then
+            info "版本变更: $old_ver -> $new_ver"
+            if [ -f "$INSTALL_DIR/CHANGELOG.md" ]; then
+                echo ""
+                echo -e "${CYAN}--- 更新日志 ---${NC}"
+                head -50 "$INSTALL_DIR/CHANGELOG.md"
+                echo -e "${CYAN}-----------------${NC}"
+                echo ""
+            fi
+        else
+            info "代码已是最新版本: $new_ver"
+        fi
     else
         warn "非 git 仓库，跳过代码更新"
     fi
