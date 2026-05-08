@@ -1,6 +1,6 @@
 #!/bin/bash
 # F2BHub 在线安装脚本
-# curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/F2BHub/install.sh | bash
+# curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/install.sh | bash
 
 set -e
 
@@ -36,7 +36,7 @@ else
     git clone "$REPO" "$INSTALL_DIR"
 fi
 
-cd "$INSTALL_DIR/F2BHub"
+cd "$INSTALL_DIR"
 chmod +x f2b.sh
 
 info "安装完成！运行管理脚本..."
