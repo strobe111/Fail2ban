@@ -1,4 +1,7 @@
-__pycache__/
-*.pyc
+config.py
+agent/agent.conf
 *.db
-.env
+*.pyc
+__pycache__/
+.venv/
+*.log
