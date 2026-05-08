@@ -2,6 +2,21 @@
 
 All notable changes to F2BHub are documented here.
 
+## v0.4.0 - 2026-05-08
+
+### New
+- 3D Globe visualization: interactive globe.gl map showing ban origins by country
+- `/api/globe` endpoint: returns country-level ban statistics (total + active bans)
+- GeoIP module (app/geoip.py): IP-to-country lookup via ip-api.com with caching
+- Globe toggle button in bottom-right corner, opens right-side drawer panel
+- Responsive: desktop 50% slide-in, mobile bottom sheet
+- Country labels show code + active/total ban count
+- Arc connections from first registered country to all ban origins
+- Active bans shown in red, inactive in blue
+- Auto-refresh every 60 seconds while open
+
+---
+
 ## v0.3.0 - 2026-05-08
 
 ### New
