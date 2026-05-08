@@ -45,7 +45,7 @@ class Server(db.Model):
         return "green"
 
     def _hour_slot(self, hours_ago):
-        """Return (start, end) of a clock-hour slot aligned to :00"""
+        """Return (start, end) of a clock-hour slot aligned to :00, using local time"""
         from datetime import timedelta
         now = datetime.now()
         current_hour = now.replace(minute=0, second=0, microsecond=0)
@@ -81,8 +81,10 @@ class Server(db.Model):
     def is_online(self):
         if not self.last_heartbeat:
             return False
-        now = datetime.now()
-        delta = now - self.last_heartbeat.replace(tzinfo=None) if self.last_heartbeat.tzinfo else now - self.last_heartbeat
+        from datetime import timezone as tz
+        now = datetime.now(tz.utc)
+        hb = self.last_heartbeat.replace(tzinfo=tz.utc) if self.last_heartbeat.tzinfo is None else self.last_heartbeat
+        delta = now - hb
         return delta.total_seconds() < 180
 
 
