@@ -22,7 +22,10 @@ echo "======================================"
 echo -e "${NC}"
 
 if [ "$(id -u)" = "0" ]; then
-    error "请勿以 root 运行，使用普通用户（脚本内会使用 sudo）"
+    SUDO=""
+    info "检测到 root 用户，直接执行"
+else
+    SUDO="sudo"
 fi
 
 if [ -d "$INSTALL_DIR" ]; then
@@ -31,8 +34,10 @@ if [ -d "$INSTALL_DIR" ]; then
     git pull
 else
     info "克隆仓库到 $INSTALL_DIR ..."
-    sudo mkdir -p "$INSTALL_DIR"
-    sudo chown "$USER:$USER" "$INSTALL_DIR"
+    $SUDO mkdir -p "$INSTALL_DIR"
+    if [ -n "$SUDO" ]; then
+        $SUDO chown "$USER:$USER" "$INSTALL_DIR"
+    fi
     git clone "$REPO" "$INSTALL_DIR"
 fi
 

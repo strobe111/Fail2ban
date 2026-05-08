@@ -29,12 +29,15 @@ detect_os() {
     fi
 }
 
+# Run command with sudo when not root, plain when root
+as_root() { [ "$(id -u)" = "0" ] && "$@" || sudo "$@"; }
+
 pkg_install() {
     local os=$(detect_os)
     if [ "$os" = "debian" ]; then
-        sudo apt-get update -qq && sudo apt-get install -y -qq "$@"
+        as_root apt-get update -qq && as_root apt-get install -y -qq "$@"
     elif [ "$os" = "rhel" ]; then
-        sudo yum install -y -q "$@"
+        as_root yum install -y -q "$@"
     else
         error "Unsupported OS. Only Debian/Ubuntu and RHEL/CentOS are supported."
     fi
@@ -56,13 +59,13 @@ install_f2bhub() {
         pkg_install python3 python3-venv python3-pip fail2ban
     elif [ "$os" = "rhel" ]; then
         pkg_install python3 python3-pip fail2ban
-        sudo pip3 install --upgrade pip
+        as_root pip3 install --upgrade pip
     fi
 
     info "启动 Fail2ban..."
-    sudo systemctl enable --now fail2ban
+    as_root systemctl enable --now fail2ban
     sleep 1
-    if sudo systemctl is-active --quiet fail2ban; then
+    if as_root systemctl is-active --quiet fail2ban; then
         info "Fail2ban 已启动"
     else
         warn "Fail2ban 启动失败，请检查: systemctl status fail2ban"
@@ -77,14 +80,26 @@ install_f2bhub() {
     info "数据库已初始化"
 
     info "创建 F2BHub 服务..."
-    sudo tee /etc/systemd/system/$HUB_SERVICE.service > /dev/null <<EOF
+    # Determine service user: use a dedicated user if running as root
+    if [ "$(id -u)" = "0" ]; then
+        if ! id -u f2bhub &>/dev/null; then
+            as_root useradd -r -s /usr/sbin/nologin f2bhub
+        fi
+        SERVICE_USER="f2bhub"
+        as_root chown -R f2bhub:f2bhub "$INSTALL_DIR"
+        as_root chown -R f2bhub:f2bhub "$VENV_DIR"
+    else
+        SERVICE_USER="$USER"
+    fi
+
+    as_root tee /etc/systemd/system/$HUB_SERVICE.service > /dev/null <<EOF
 [Unit]
 Description=F2BHub Web Dashboard
 After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$VENV_DIR/bin/python3 $INSTALL_DIR/run.py
 Restart=always
@@ -95,10 +110,10 @@ Environment=FLASK_ENV=production
 WantedBy=multi-user.target
 EOF
 
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now $HUB_SERVICE
+    as_root systemctl daemon-reload
+    as_root systemctl enable --now $HUB_SERVICE
     sleep 1
-    if sudo systemctl is-active --quiet $HUB_SERVICE; then
+    if as_root systemctl is-active --quiet $HUB_SERVICE; then
         info "F2BHub 服务已启动"
     else
         warn "F2BHub 服务启动失败，请检查: systemctl status $HUB_SERVICE"
@@ -106,10 +121,10 @@ EOF
 
     info "配置防火墙..."
     if command -v ufw &>/dev/null; then
-        sudo ufw allow $HUB_PORT/tcp &>/dev/null && info "UFW 已放行端口 $HUB_PORT" || warn "UFW 放行失败"
+        as_root ufw allow $HUB_PORT/tcp &>/dev/null && info "UFW 已放行端口 $HUB_PORT" || warn "UFW 放行失败"
     elif command -v firewall-cmd &>/dev/null; then
-        sudo firewall-cmd --permanent --add-port=$HUB_PORT/tcp &>/dev/null && \
-        sudo firewall-cmd --reload &>/dev/null && info "firewalld 已放行端口 $HUB_PORT" || warn "firewalld 放行失败"
+        as_root firewall-cmd --permanent --add-port=$HUB_PORT/tcp &>/dev/null && \
+        as_root firewall-cmd --reload &>/dev/null && info "firewalld 已放行端口 $HUB_PORT" || warn "firewalld 放行失败"
     else
         warn "未检测到防火墙，请手动放行端口 $HUB_PORT"
     fi
@@ -119,7 +134,7 @@ EOF
     echo ""
     info "===== 安装完成 ====="
     info "Web 面板: http://$ip:$HUB_PORT"
-    info "CLI 查看: sudo fail2ban-client status"
+    info "CLI 查看: fail2ban-client status"
     echo ""
 }
 
@@ -172,7 +187,7 @@ configure_fail2ban() {
     local jail_file="/etc/fail2ban/jail.local"
     info "写入 $jail_file ..."
 
-    sudo tee "$jail_file" > /dev/null <<EOF
+    as_root tee "$jail_file" > /dev/null <<EOF
 [DEFAULT]
 bantime  = $BANTIME
 findtime = $FINDTIME
@@ -181,7 +196,7 @@ backend  = systemd
 EOF
 
     for jail in $JAILS; do
-        sudo tee -a "$jail_file" > /dev/null <<EOF
+        as_root tee -a "$jail_file" > /dev/null <<EOF
 
 [$jail]
 enabled  = true
@@ -189,14 +204,14 @@ EOF
     done
 
     info "重启 Fail2ban..."
-    sudo systemctl restart fail2ban
+    as_root systemctl restart fail2ban
     sleep 1
 
     echo ""
     info "===== 配置完成 ====="
     info "已启用: $JAILS"
     info "参数: bantime=$BANTIME findtime=$FINDTIME maxretry=$MAXRETRY"
-    sudo fail2ban-client status
+    as_root fail2ban-client status
     echo ""
 }
 
@@ -268,15 +283,25 @@ deploy_local_agent() {
     python3 -m venv "$agent_venv"
     "$agent_venv/bin/pip" install -q requests
 
-    sudo tee /etc/systemd/system/$AGENT_SERVICE.service > /dev/null <<EOF
+    # Determine agent service user
+    local agent_user
+    if [ "$(id -u)" = "0" ]; then
+        if ! id -u f2bhub &>/dev/null; then
+            as_root useradd -r -s /usr/sbin/nologin f2bhub
+        fi
+        agent_user="f2bhub"
+    else
+        agent_user="$USER"
+    fi
+
+    as_root tee /etc/systemd/system/$AGENT_SERVICE.service > /dev/null <<EOF
 [Unit]
 Description=F2BHub Agent - $hostname
 After=network.target fail2ban.service
 
 [Service]
 Type=simple
-User=$USER
-WorkingDirectory=$agent_dir
+User=$agent_user
 ExecStart=$agent_venv/bin/python3 $agent_dir/f2b_agent.py
 Restart=always
 RestartSec=10
@@ -285,15 +310,15 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now $AGENT_SERVICE
+    as_root systemctl daemon-reload
+    as_root systemctl enable --now $AGENT_SERVICE
     sleep 2
 
     echo ""
     info "===== Agent 部署完成 ====="
     info "服务器名: $hostname"
     info "Hub: $hub_url"
-    if sudo systemctl is-active --quiet $AGENT_SERVICE; then
+    if as_root systemctl is-active --quiet $AGENT_SERVICE; then
         info "Agent 运行中"
     else
         warn "Agent 启动失败，请检查: systemctl status $AGENT_SERVICE"
@@ -310,7 +335,7 @@ generate_remote_command() {
     local ip=$(hostname -I 2>/dev/null | awk '{print $1}')
     [ -z "$ip" ] && ip="<F2BHub服务器IP>"
 
-    sudo systemctl restart $HUB_SERVICE 2>/dev/null
+    as_root systemctl restart $HUB_SERVICE 2>/dev/null
 
     echo ""
     info "===== 远程安装命令 ====="
@@ -334,11 +359,11 @@ manage_agent() {
     info "===== 管理 Fail2ban Agent ====="
     echo ""
 
-    if ! sudo systemctl list-unit-files $AGENT_SERVICE.service &>/dev/null; then
+    if ! as_root systemctl list-unit-files $AGENT_SERVICE.service &>/dev/null; then
         warn "本机未部署 Agent"
     else
         echo "本机 Agent 状态:"
-        sudo systemctl status $AGENT_SERVICE --no-pager 2>/dev/null || true
+        as_root systemctl status $AGENT_SERVICE --no-pager 2>/dev/null || true
         echo ""
     fi
 
@@ -370,18 +395,18 @@ with app.app_context():
 
     case $AGENT_OP in
         1)
-            sudo systemctl restart $AGENT_SERVICE
+            as_root systemctl restart $AGENT_SERVICE
             info "Agent 已重启"
             ;;
         2)
-            sudo systemctl stop $AGENT_SERVICE
+            as_root systemctl stop $AGENT_SERVICE
             info "Agent 已停止"
             ;;
         3)
-            sudo systemctl stop $AGENT_SERVICE 2>/dev/null || true
-            sudo systemctl disable $AGENT_SERVICE 2>/dev/null || true
-            sudo rm -f /etc/systemd/system/$AGENT_SERVICE.service
-            sudo systemctl daemon-reload
+            as_root systemctl stop $AGENT_SERVICE 2>/dev/null || true
+            as_root systemctl disable $AGENT_SERVICE 2>/dev/null || true
+            as_root rm -f /etc/systemd/system/$AGENT_SERVICE.service
+            as_root systemctl daemon-reload
             info "Agent 已删除"
             ;;
         *)
@@ -409,9 +434,9 @@ update_f2bhub() {
     "$VENV_DIR/bin/pip" install -q --upgrade -r "$INSTALL_DIR/requirements.txt"
 
     info "重启 F2BHub..."
-    sudo systemctl restart $HUB_SERVICE
+    as_root systemctl restart $HUB_SERVICE
     sleep 1
-    if sudo systemctl is-active --quiet $HUB_SERVICE; then
+    if as_root systemctl is-active --quiet $HUB_SERVICE; then
         info "F2BHub 已更新并启动"
     else
         warn "F2BHub 启动失败，请检查: systemctl status $HUB_SERVICE"
@@ -431,19 +456,19 @@ uninstall() {
     [ "$CONFIRM" != "y" ] && { info "已取消"; return; }
 
     info "停止服务..."
-    sudo systemctl stop $HUB_SERVICE 2>/dev/null || true
-    sudo systemctl stop $AGENT_SERVICE 2>/dev/null || true
+    as_root systemctl stop $HUB_SERVICE 2>/dev/null || true
+    as_root systemctl stop $AGENT_SERVICE 2>/dev/null || true
 
     info "删除 systemd 服务..."
-    sudo systemctl disable $HUB_SERVICE 2>/dev/null || true
-    sudo systemctl disable $AGENT_SERVICE 2>/dev/null || true
-    sudo rm -f /etc/systemd/system/$HUB_SERVICE.service
-    sudo rm -f /etc/systemd/system/$AGENT_SERVICE.service
-    sudo systemctl daemon-reload
+    as_root systemctl disable $HUB_SERVICE 2>/dev/null || true
+    as_root systemctl disable $AGENT_SERVICE 2>/dev/null || true
+    as_root rm -f /etc/systemd/system/$HUB_SERVICE.service
+    as_root rm -f /etc/systemd/system/$AGENT_SERVICE.service
+    as_root systemctl daemon-reload
 
     info "删除 F2BHub 文件..."
-    sudo rm -rf "$VENV_DIR"
-    sudo rm -f "$INSTALL_DIR/f2bhub.db"
+    as_root rm -rf "$VENV_DIR"
+    as_root rm -f "$INSTALL_DIR/f2bhub.db"
 
     echo ""
     read -p "是否同时卸载 Fail2ban？(y/N): " RM_F2B
@@ -452,11 +477,11 @@ uninstall() {
         info "卸载 Fail2ban..."
         local os=$(detect_os)
         if [ "$os" = "debian" ]; then
-            sudo apt-get remove -y fail2ban
+            as_root apt-get remove -y fail2ban
         elif [ "$os" = "rhel" ]; then
-            sudo yum remove -y fail2ban
+            as_root yum remove -y fail2ban
         fi
-        sudo rm -f /etc/fail2ban/jail.local
+        as_root rm -f /etc/fail2ban/jail.local
     else
         info "保留 Fail2ban"
     fi
