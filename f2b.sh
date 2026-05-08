@@ -568,8 +568,8 @@ fi
 
 # Re-attach to terminal if stdin is piped (e.g. curl | bash)
 # so interactive read prompts work
-if [ ! -t 0 ]; then
-    exec < /dev/tty
+if [ ! -t 0 ] && [ -e /dev/tty ]; then
+    exec 0</dev/tty
 fi
 
 main_menu
