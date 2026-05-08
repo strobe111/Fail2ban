@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e
-
 # === F2BHub 管理脚本 ===
 # curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/f2b.sh | bash
 REPO="https://github.com/strobe111/Fail2ban.git"
@@ -554,7 +552,7 @@ main_menu() {
     done
 }
 
-# If running via curl (not from /opt/F2BHub), clone repo first
+# If running via curl (stdin is piped), clone repo and re-exec from terminal
 if [ ! -f "$INSTALL_DIR/f2b.sh" ]; then
     # Need git for bootstrap
     if ! command -v git &>/dev/null; then
@@ -566,6 +564,12 @@ if [ ! -f "$INSTALL_DIR/f2b.sh" ]; then
         fi
     fi
     bootstrap
+fi
+
+# Re-attach to terminal if stdin is piped (e.g. curl | bash)
+# so interactive read prompts work
+if [ ! -t 0 ]; then
+    exec < /dev/tty
 fi
 
 main_menu
