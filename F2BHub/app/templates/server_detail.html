@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ server.hostname }} - F2BHub{% endblock %}
+{% block content %}
+<h1>{{ server.hostname }}</h1>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">
+            <div class="threat-column">
+            {% for block in server.threat_timeline %}
+            <span class="threat-block threat-{{ block.level }}" title="{{ block.label }} — {{ block.count }} 次封禁"></span>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="stat-label">安全状态 (近8小时)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value"><span class="status-dot {{ 'online' if server.is_online else 'offline' }}"></span>{{ '在线' if server.is_online else '离线' }}</div>
+        <div class="stat-label">状态</div>
+    </div>
+    <div class="stat-card highlight">
+        <div class="stat-value">{{ server.active_bans }}</div>
+        <div class="stat-label">封禁中</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ server.total_bans }}</div>
+        <div class="stat-label">封禁总计</div>
+    </div>
+</div>
+
+<h2>封禁记录</h2>
+<table>
+    <thead><tr><th>时间</th><th>Jail</th><th>IP</th><th>原因</th><th>状态</th></tr></thead>
+    <tbody>
+    {% for b in pagination.items %}
+        <tr>
+            <td>{{ b.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ b.jail }}</td>
+            <td>{{ b.masked_ip }}</td>
+            <td class="truncate" title="{{ b.reason }}">{{ b.reason or '-' }}</td>
+            <td>{{ '封禁中' if not b.unban_timestamp else '已解封 ' + b.unban_timestamp.strftime('%m-%d %H:%M') }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+<div class="pagination">
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}">&laquo; 上一页</a>{% endif %}
+    <span>第 {{ pagination.page }} 页 / 共 {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}">下一页 &raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

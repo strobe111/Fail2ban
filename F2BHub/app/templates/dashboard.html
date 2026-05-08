@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}F2BHub 概览{% endblock %}
+{% block content %}
+<h1>概览</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_servers }}</div>
+        <div class="stat-label">服务器</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ online_servers }}</div>
+        <div class="stat-label">在线</div>
+    </div>
+    <div class="stat-card highlight">
+        <div class="stat-value">{{ active_bans }}</div>
+        <div class="stat-label">封禁中</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_bans }}</div>
+        <div class="stat-label">封禁总计</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <section>
+        <h2>高频封禁 IP</h2>
+        <table>
+            <thead><tr><th>IP 地址</th><th>封禁次数</th></tr></thead>
+            <tbody>
+            {% for ip, cnt in top_ips %}
+                <tr><td>{{ ip }}</td><td>{{ cnt }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Jail 统计</h2>
+        <table>
+            <thead><tr><th>Jail 名称</th><th>封禁次数</th></tr></thead>
+            <tbody>
+            {% for jail, cnt in jail_stats %}
+                <tr><td><a href="/bans?jail={{ jail }}">{{ jail }}</a></td><td>{{ cnt }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<section>
+    <h2>最近封禁</h2>
+    <table>
+        <thead><tr><th>时间</th><th>服务器</th><th>Jail</th><th>IP</th><th>原因</th></tr></thead>
+        <tbody>
+        {% for b in recent %}
+            <tr>
+                <td>{{ b.timestamp.strftime('%m-%d %H:%M') }}</td>
+                <td><a href="/server/{{ b.server_id }}">{{ b.server.hostname }}</a></td>
+                <td>{{ b.jail }}</td>
+                <td>{{ b.masked_ip }}</td>
+                <td class="truncate" title="{{ b.reason }}">{{ b.reason or '-' }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

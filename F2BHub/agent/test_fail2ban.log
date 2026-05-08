@@ -1,0 +1,7 @@
+2026-05-07 10:30:00,123 fail2ban.actions [1234]: NOTICE [sshd] Ban 192.168.1.100
+2026-05-07 10:31:00,456 fail2ban.actions [1234]: NOTICE [sshd] Ban 10.0.0.55
+2026-05-07 10:32:00,789 fail2ban.actions [1234]: NOTICE [apache-auth] Ban 172.16.0.22
+2026-05-07 10:45:00,111 fail2ban.actions [5678]: NOTICE [sshd] Unban 192.168.1.100
+2026-05-07 10:50:00,222 fail2ban.actions [5678]: NOTICE [sshd] Ban 192.168.1.200
+2026-05-07 11:00:00,333 fail2ban.actions [5678]: NOTICE [nginx-http-auth] Ban 203.0.113.45
+2026-05-07 12:00:00,999 fail2ban.actions [9999]: NOTICE [sshd] Ban 8.8.8.8

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}封禁记录 - F2BHub{% endblock %}
+{% block content %}
+<h1>封禁记录</h1>
+
+<form class="filter-bar" method="get">
+    <select name="jail">
+        <option value="">全部 Jail</option>
+        {% for j in jails %}
+        <option value="{{ j }}" {{ 'selected' if filters.get('jail')==j }}>{{ j }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" name="ip" placeholder="IP 筛选" value="{{ filters.get('ip', '') }}">
+    <select name="status">
+        <option value="">全部状态</option>
+        <option value="active" {{ 'selected' if filters.get('status')=='active' }}>封禁中</option>
+        <option value="expired" {{ 'selected' if filters.get('status')=='expired' }}>已解封</option>
+    </select>
+    <button type="submit">筛选</button>
+</form>
+
+<table>
+    <thead><tr><th>时间</th><th>服务器</th><th>Jail</th><th>IP</th><th>原因</th><th>状态</th></tr></thead>
+    <tbody>
+    {% for b in pagination.items %}
+        <tr>
+            <td>{{ b.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td><a href="/server/{{ b.server_id }}">{{ b.server.hostname }}</a></td>
+            <td>{{ b.jail }}</td>
+            <td>{{ b.masked_ip }}</td>
+            <td class="truncate" title="{{ b.reason }}">{{ b.reason or '-' }}</td>
+            <td>{{ '封禁中' if not b.unban_timestamp else '已解封' }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+<div class="pagination">
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}&{{ filters|urlencode }}">&laquo; 上一页</a>{% endif %}
+    <span>第 {{ pagination.page }} 页 / 共 {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}&{{ filters|urlencode }}">下一页 &raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}F2BHub{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav>
+    <div class="nav-brand"><a href="/">F2BHub</a></div>
+    <div class="nav-links">
+        <a href="/">概览</a>
+        <a href="/servers">服务器</a>
+        <a href="/bans">封禁记录</a>
+    </div>
+    <div class="nav-stats">
+        <span class="badge">{{ active_bans }} 封禁中</span>
+        <span class="badge">{{ total_bans }} 总计</span>
+        <span class="badge">{{ total_servers }} 台服务器</span>
+    </div>
+</nav>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<footer>F2BHub &mdash; Fail2ban 多服务器封禁看板</footer>
+</body>
+</html>

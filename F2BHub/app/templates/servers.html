@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}服务器列表 - F2BHub{% endblock %}
+{% block content %}
+<h1>服务器列表</h1>
+<table>
+    <thead><tr><th>主机名</th><th>安全状态 (近8小时)</th><th>在线</th><th>封禁中</th><th>封禁总计</th><th>最后心跳</th></tr></thead>
+    <tbody>
+    {% for s in servers %}
+        <tr>
+            <td><a href="/server/{{ s.id }}">{{ s.hostname }}</a></td>
+            <td class="threat-cell">
+                <div class="threat-column">
+                {% for block in s.threat_timeline %}
+                    <span class="threat-block threat-{{ block.level }}" title="{{ block.label }} — {{ block.count }} 次封禁"></span>
+                {% endfor %}
+                </div>
+            </td>
+            <td><span class="status-dot {{ 'online' if s.is_online else 'offline' }}"></span>{{ '在线' if s.is_online else '离线' }}</td>
+            <td>{{ s.active_bans }}</td>
+            <td>{{ s.total_bans }}</td>
+            <td>{{ s.last_heartbeat.strftime('%Y-%m-%d %H:%M') if s.last_heartbeat else '从未' }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<div class="legend">
+    <span class="legend-item"><span class="threat-block threat-green" style="width:14px;height:8px;"></span> 安全 — 该小时无封禁</span>
+    <span class="legend-item"><span class="threat-block threat-yellow" style="width:14px;height:8px;"></span> 警告 — 该小时封禁 ≤10 IP</span>
+    <span class="legend-item"><span class="threat-block threat-red" style="width:14px;height:8px;"></span> 危险 — 该小时封禁 &gt;10 IP</span>
+</div>
+{% endblock %}
