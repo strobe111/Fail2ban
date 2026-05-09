@@ -5,58 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}F2BHub{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="//unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
 </head>
 <body>
-<nav>
-    <div class="nav-brand"><a href="/">F2BHub</a></div>
-    <div class="nav-links">
-        <a href="/">概览</a>
-        <a href="/servers">服务器</a>
-        <a href="/bans">封禁记录</a>
-    </div>
-    <div class="nav-stats">
-        <span class="badge">{{ active_bans }} 封禁中</span>
-        <span class="badge">{{ total_bans }} 总计</span>
-        <span class="badge">{{ total_servers }} 台服务器</span>
-    </div>
-</nav>
-<main>
-    {% block content %}{% endblock %}
-</main>
-<footer>F2BHub &mdash; Fail2ban 多服务器封禁看板</footer>
 
-<!-- Globe toggle button -->
-<button id="globe-btn" title="全球封禁地图">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.1)"/>
-        <path d="M12 2C12 2 15 6 15 12C15 18 12 22 12 22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M12 2C12 2 9 6 9 12C9 18 12 22 12 22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M2 12H22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M4 8H20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M4 16H20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="12" r="1.5" fill="#58a6ff"/>
-    </svg>
-</button>
+<div id="globe-container">
+    <div id="globe-render"></div>
+</div>
 
-<!-- Globe drawer -->
-<div id="globe-drawer">
-    <div id="globe-header">
-        <h2>F2BHub /// 全球封禁</h2>
-        <button id="globe-close">关闭</button>
-    </div>
-    <div id="globe-stats">
-        <div>检测到 <span id="globe-country-count">0</span> 个国家/地区</div>
-        <div>封禁: <span id="globe-total">0</span> 总 / <span id="globe-active">0</span> 活跃</div>
-        <div>状态: <span id="globe-status">就绪</span></div>
-    </div>
-    <div id="globe-area">
-        <div id="globe-loading">加载全球数据...</div>
+
+<div id="layout">
+    <div id="main-content">
+        <header class="top-bar">
+            <div class="brand"><a href="/">F2BHub</a></div>
+            <nav class="nav-links">
+                <a href="/">概览</a>
+                <a href="/servers">服务器</a>
+                <a href="/bans">封禁记录</a>
+            </nav>
+        </header>
+        <div class="split-layout">
+            <div class="left-panel">
+                <main>
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
+        <footer>F2BHub &mdash; Fail2ban 多服务器封禁看板</footer>
     </div>
 </div>
 
-<script src="//unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
 <script>
 (function() {
+    'use strict';
+
+    // SPA navigation — intercept internal links, swap content without full page reload
+    var contentPanel = document.querySelector('.left-panel');
+    var currentPath = location.pathname;
+
+    function swapContent(html, path) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'text/html');
+        var newContent = doc.querySelector('.left-panel');
+        if (newContent && contentPanel) {
+            contentPanel.innerHTML = newContent.innerHTML;
+            document.title = doc.title || 'F2BHub';
+            history.pushState(null, '', path);
+            currentPath = path;
+        } else {
+            location.href = path;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//')) return;
+        e.preventDefault();
+        if (href === currentPath) return;
+        fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) { swapContent(html, href); })
+            .catch(function() { location.href = href; });
+    });
+
+    window.addEventListener('popstate', function() {
+        var path = location.pathname;
+        if (path === currentPath) return;
+        fetch(path, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newContent = doc.querySelector('.left-panel');
+                if (newContent && contentPanel) {
+                    contentPanel.innerHTML = newContent.innerHTML;
+                    document.title = doc.title || 'F2BHub';
+                    currentPath = path;
+                } else {
+                    location.href = path;
+                }
+            })
+            .catch(function() { location.href = path; });
+    });
+})();
+
+(function() {
+    'use strict';
     var COORD_MAP = {
         'CN':[35.86,104.20],'HK':[22.32,114.17],'TW':[23.70,120.96],'JP':[36.20,138.25],
         'KR':[35.91,127.77],'SG':[1.35,103.82],'MY':[4.21,101.98],'TH':[15.87,100.99],
@@ -77,45 +113,27 @@
         'MA':[31.79,-7.09],'DZ':[28.03,1.66],'GH':[7.95,-1.02]
     };
 
-    var drawer = document.getElementById('globe-drawer');
-    var btn = document.getElementById('globe-btn');
-    var closeBtn = document.getElementById('globe-close');
-    var statusEl = document.getElementById('globe-status');
-    var countEl = document.getElementById('globe-country-count');
-    var totalEl = document.getElementById('globe-total');
-    var activeEl = document.getElementById('globe-active');
-    var area = document.getElementById('globe-area');
-    var loading = document.getElementById('globe-loading');
+    var FLAG_EMOJI = {
+        'CN':'🇨🇳','HK':'🇭🇰','TW':'🇹🇼','JP':'🇯🇵','KR':'🇰🇷','SG':'🇸🇬','MY':'🇲🇾',
+        'TH':'🇹🇭','VN':'🇻🇳','PH':'🇵🇭','ID':'🇮🇩','IN':'🇮🇳','PK':'🇵🇰','BD':'🇧🇩',
+        'LK':'🇱🇰','MM':'🇲🇲','KH':'🇰🇭','MN':'🇲🇳','KZ':'🇰🇿','AE':'🇦🇪','SA':'🇸🇦',
+        'IL':'🇮🇱','TR':'🇹🇷','IR':'🇮🇷','IQ':'🇮🇶','US':'🇺🇸','CA':'🇨🇦','MX':'🇲🇽',
+        'BR':'🇧🇷','AR':'🇦🇷','CL':'🇨🇱','CO':'🇨🇴','PE':'🇵🇪','VE':'🇻🇪','AU':'🇦🇺',
+        'NZ':'🇳🇿','GB':'🇬🇧','IE':'🇮🇪','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','ES':'🇪🇸',
+        'PT':'🇵🇹','NL':'🇳🇱','BE':'🇧🇪','CH':'🇨🇭','AT':'🇦🇹','SE':'🇸🇪','NO':'🇳🇴',
+        'FI':'🇫🇮','DK':'🇩🇰','PL':'🇵🇱','CZ':'🇨🇿','HU':'🇭🇺','RO':'🇷🇴','BG':'🇧🇬',
+        'GR':'🇬🇷','UA':'🇺🇦','RU':'🇷🇺','ZA':'🇿🇦','EG':'🇪🇬','NG':'🇳🇬','KE':'🇰🇪',
+        'ET':'🇪🇹','MA':'🇲🇦','DZ':'🇩🇿','GH':'🇬🇭'
+    };
 
+    var globeContainer = document.getElementById('globe-container');
+    var renderArea = document.getElementById('globe-render');
     var globeInst = null;
-    var isOpen = false;
-    var lastCodes = null;
-
-    function toggle() {
-        isOpen = !isOpen;
-        if (isOpen) {
-            drawer.classList.add('active');
-            btn.style.display = 'none';
-            loadGlobe();
-        } else {
-            drawer.classList.remove('active');
-            btn.style.display = 'flex';
-        }
-    }
-
-    btn.addEventListener('click', toggle);
-    closeBtn.addEventListener('click', toggle);
 
     function loadGlobe() {
-        statusEl.textContent = '加载中...';
         fetch('/api/globe').then(function(r) { return r.json(); }).then(function(data) {
-            totalEl.textContent = data.total_bans;
-            activeEl.textContent = data.active_bans;
-            countEl.textContent = data.countries.length;
-            statusEl.textContent = '在线';
             buildGlobe(data.countries);
         }).catch(function(e) {
-            statusEl.textContent = '加载失败';
             console.error('Globe data error:', e);
         });
     }
@@ -143,35 +161,37 @@
             });
         }
 
-        lastCodes = countries.map(function(c) { return c.code; }).sort().join(',');
-
         if (globeInst) {
             globeInst.pointsData(points);
             globeInst.arcsData(arcs);
             globeInst.htmlElementsData(points);
+            globeInst.ringsData(points);
             return;
         }
 
-        if (loading) loading.remove();
-
         var globe = Globe();
-        globe(area);
-        globe.width(area.clientWidth);
-        globe.height(area.clientHeight);
+        globe(renderArea);
+
+        // Canvas fills the inner div; container clips with overflow:hidden
+        var cw = globeContainer.clientWidth;
+        var ch = globeContainer.clientHeight;
+        globe.width(Math.round(cw * 2));
+        globe.height(ch);
+
         globe.backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png');
         globe.globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg');
         globe.bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png');
-        globe.atmosphereColor('rgba(88, 166, 255, 0.6)');
-        globe.atmosphereAltitude(0.2);
+        globe.atmosphereColor('rgba(0, 150, 255, 0.7)');
+        globe.atmosphereAltitude(0.25);
 
         globe.pointsData(points);
-        globe.pointColor(function(d) { return d.active > 0 ? '#f85149' : '#58a6ff'; });
+        globe.pointColor(function(d) { return d.active > 0 ? '#f85149' : '#00ffff'; });
         globe.pointAltitude(0.02);
         globe.pointRadius(function(d) { return Math.max(0.3, Math.min(1.2, 0.3 + d.total * 0.02)); });
 
         globe.ringsData(points);
-        globe.ringColor(function() { return '#58a6ff'; });
-        globe.ringMaxRadius(4);
+        globe.ringColor(function() { return '#00ffff'; });
+        globe.ringMaxRadius(5);
         globe.ringPropagationSpeed(3);
         globe.ringRepeatPeriod(800);
 
@@ -181,40 +201,43 @@
         globe.htmlAltitude(0.01);
         globe.htmlElement(function(d) {
             var el = document.createElement('div');
-            el.className = 'globe-label';
-            el.innerHTML = '<span class="label-name">' + d.code + '</span><span class="label-count">' + d.active + '/' + d.total + '</span>';
+            var emoji = FLAG_EMOJI[d.code] || '🏁';
+            el.className = 'earth-label-card';
+            el.innerHTML = '<span class="flag-emoji">' + emoji + '</span><b>' + d.code + '</b> <span style="color:#f85149;font-size:10px">' + d.active + '/' + d.total + '</span>';
             return el;
         });
 
         globe.arcsData(arcs);
-        globe.arcColor(function() { return ['rgba(88, 166, 255, 0.4)', 'rgba(248, 81, 73, 0.4)']; });
+        globe.arcColor(function() { return ['rgba(0, 255, 255, 0.5)', 'rgba(248, 81, 73, 0.5)']; });
         globe.arcDashLength(0.6);
         globe.arcDashGap(0.2);
         globe.arcDashAnimateTime(2000);
-        globe.arcStroke(0.8);
-        globe.arcAltitude(0.25);
+        globe.arcStroke(1.2);
+        globe.arcAltitude(0.3);
 
         var center = countries.find(function(c) { return c.code === 'CN'; }) || countries[0];
         var cc = COORD_MAP[center.code] || [20, 0];
-        globe.pointOfView({ lat: cc[0], lng: cc[1], altitude: 2.5 });
+        globe.pointOfView({ lat: 20, lng: 120, altitude: 2.2 }, 0);
 
         globe.controls().autoRotate = true;
-        globe.controls().autoRotateSpeed = 0.6;
+        globe.controls().autoRotateSpeed = 0.4;
         globe.controls().enableZoom = true;
+        globe.controls().enablePan = true;
+        globe.controls().enableDamping = true;
+        globe.controls().dampingFactor = 0.1;
 
         globeInst = globe;
     }
 
     window.addEventListener('resize', function() {
-        if (isOpen && globeInst) {
-            globeInst.width(area.clientWidth);
-            globeInst.height(area.clientHeight);
+        if (globeInst) {
+            globeInst.width(Math.round(globeContainer.clientWidth * 2));
+            globeInst.height(globeContainer.clientHeight);
         }
     });
 
-    setInterval(function() {
-        if (isOpen) loadGlobe();
-    }, 60000);
+    setTimeout(loadGlobe, 100);
+    setInterval(loadGlobe, 60000);
 })();
 </script>
 </body>
