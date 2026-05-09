@@ -2,6 +2,32 @@
 
 All notable changes to F2BHub are documented here.
 
+## v0.5.0 - 2026-05-10
+
+### New
+- Full-screen 3D globe background: Globe.gl renders behind all UI content with night-sky starfield
+- Glassmorphism left panel: semi-transparent backdrop-filter blur design lets stars show through
+- SPA navigation: page links (概览/服务器/封禁记录) swap content via fetch without reloading the globe
+- Right-shifted earth: overflow:hidden container with inner element offset positions earth on right side
+- Country labels with emoji flags showing active/total ban counts
+- Navigation bar restored in top header (概览/服务器/封禁记录)
+- Auto-rotating globe with drag-to-rotate and scroll-to-zoom interaction
+
+### Changed
+- Globe background image changed from transparent to night-sky.png (rotates with earth)
+- Earth stats overlay panel removed (cleaner full-bleed design)
+- Atmosphere color updated to cyan-blue (rgba(0,150,255,0.7))
+- Auto-rotate speed lowered to 0.4 for smoother feel
+- Arc/ring colors switched to cyan (#00ffff) theme
+- Content panel scrollbar hidden for cleaner look
+
+### Fixed
+- Globe mouse interaction: pointer-events pass through transparent layout to canvas
+- White scrollbar on left panel removed
+- SPA routing preserves globe animation state across page transitions
+
+---
+
 ## v0.4.0 - 2026-05-08
 
 ### New
