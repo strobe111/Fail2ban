@@ -1,25 +1,46 @@
-# Release Notes - v0.5.0
+# 发布说明
 
-## Full-Screen Globe Dashboard
+---
 
-### New
-- **Full-screen 3D globe background**: Globe.gl renders behind all UI content with night-sky starfield that rotates with the earth
-- **Glassmorphism left panel**: Semi-transparent backdrop-filter blur design lets stars show through content area
-- **SPA navigation**: Page links (概览/服务器/封禁记录) swap content via fetch without reloading the globe — background animation stays intact
-- **Right-shifted earth**: overflow:hidden container with inner element offset positions earth on right side of screen
-- **Country labels with emoji flags**: Each ban origin shows flag emoji + country code + active/total ban counts
-- **Navigation bar**: Restored in top header (概览/服务器/封禁记录)
-- **Interactive globe**: Auto-rotating with drag-to-rotate and scroll-to-zoom
+## v0.5.0 - 2026-05-10
 
-### Changed
-- Globe background image changed from transparent to night-sky.png (rotates with earth, single-layer universe)
-- Earth stats overlay panel removed (cleaner full-bleed design)
-- Atmosphere color updated to cyan-blue theme
-- Auto-rotate speed lowered to 0.4 for smoother feel
-- Arc/ring colors switched to cyan (#00ffff)
-- Content panel scrollbar hidden for cleaner look
+### 全屏地球仪表盘
 
-### Fixed
-- Globe mouse interaction: pointer-events pass through transparent layout to canvas for drag/zoom
-- White scrollbar on left panel removed
-- SPA routing preserves globe animation state across page transitions
+#### 新增
+- **全屏 3D 地球背景**：Globe.gl 在所有 UI 内容后方渲染，夜空星场随地球一起旋转
+- **玻璃态左侧面板**：半透明毛玻璃设计（backdrop-filter blur），星空透出内容区
+- **SPA 导航**：页面链接（概览/服务器/封禁记录）通过 fetch 交换内容，不重新加载地球，背景动画保持不变
+- **地球右移**：overflow:hidden 容器 + 内部偏移，地球自然定位于屏幕右侧
+- **国旗标签**：每个封禁来源显示国旗 emoji + 国家代码 + 活跃/总计封禁数
+- **导航栏**：顶部栏恢复导航链接（概览/服务器/封禁记录）
+- **交互式地球**：自动旋转，支持鼠标拖拽旋转和滚轮缩放
+
+#### 变更
+- 地球背景从透明改为 night-sky.png（跟地球一起旋转，单层宇宙）
+- 移除地球统计面板（更简洁的全屏设计）
+- 大气层颜色更新为青蓝色主题
+- 自动旋转速度降至 0.4（更平滑）
+- 弧线/光圈颜色改为青色（#00ffff）
+- 内容面板滚动条隐藏
+
+#### 修复
+- 地球鼠标交互：pointer-events 穿透透明布局传递到 canvas，拖拽缩放正常
+- 左侧面板白色滚动条已去除
+- SPA 路由切换页面时地球动画状态保持不变
+
+---
+
+## v0.4.0 - 2026-05-08
+
+### 3D 地球可视化
+
+#### 新增
+- 3D 地球可视化：交互式 globe.gl 地图，按国家显示封禁来源
+- `/api/globe` 接口：返回国家级封禁统计（总封禁 + 活跃封禁）
+- GeoIP 模块（app/geoip.py）：通过 ip-api.com 进行 IP 国家查询，带缓存
+- 右下角地球开关按钮，点击打开右侧抽屉面板
+- 响应式：桌面 50% 滑入，移动端底部弹出
+- 国家标签显示代码 + 活跃/总封禁数
+- 从首个注册国家到所有封禁来源的弧线连接
+- 活跃封禁显示红色，非活跃显示蓝色
+- 打开时每 60 秒自动刷新
