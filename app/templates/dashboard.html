@@ -48,21 +48,4 @@
     </section>
 </div>
 
-<section>
-    <h2>最近封禁</h2>
-    <table>
-        <thead><tr><th>时间</th><th>服务器</th><th>Jail</th><th>IP</th><th>原因</th></tr></thead>
-        <tbody>
-        {% for b in recent %}
-            <tr>
-                <td>{{ b.timestamp.strftime('%m-%d %H:%M') }}</td>
-                <td><a href="/server/{{ b.server_id }}">{{ b.server.hostname }}</a></td>
-                <td>{{ b.jail }}</td>
-                <td>{{ b.masked_ip }}</td>
-                <td class="truncate" title="{{ b.reason }}">{{ b.reason or '-' }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</section>
 {% endblock %}

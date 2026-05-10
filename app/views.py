@@ -35,8 +35,6 @@ def dashboard():
     )
     top_ips = [(_mask_ip(ip), cnt) for ip, cnt in top_ips_raw]
 
-    recent = Ban.query.order_by(Ban.timestamp.desc()).limit(20).all()
-
     jail_stats = (
         db.session.query(Ban.jail, db.func.count(Ban.id).label("cnt"))
         .group_by(Ban.jail)
