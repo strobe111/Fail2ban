@@ -2,6 +2,19 @@
 
 ---
 
+## v0.7.0 - 2026-05-10
+
+### UI improvements
+
+### Changed
+- Removed the duplicate "recent bans" section from the dashboard because the bans page already provides the full ban record view
+- Made the top navigation bar fully transparent with no background, border, shadow, or blur
+- Fixed the footer to the full-page bottom and centered its content across the viewport
+- Added a GitHub project link to the footer `F2BHub` label
+- Added bottom spacing to the left content panel so fixed footer does not cover content
+
+---
+
 ## v0.6.0 - 2026-05-10
 
 ### 地球可视化增强
