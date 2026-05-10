@@ -2,6 +2,20 @@
 
 All notable changes to F2BHub are documented here.
 
+## v0.6.0 - 2026-05-10
+
+### New
+- Globe camera centered on server location (Nuremberg, DE) for natural attack-origin perspective
+- Arc direction reversed: attacks now flow from attacker countries toward the server
+- SVG flag-icons library replaces emoji flags for consistent cross-platform rendering
+- Country coverage extended with flags and coordinates for BO, CM, DO, EC, GE, LA, NC
+
+### Changed
+- Arc origin changed from first registered country to server location (Nuremberg, DE)
+- Country labels use `fi fi-XX` CSS classes instead of emoji characters
+
+---
+
 ## v0.5.0 - 2026-05-10
 
 ### New

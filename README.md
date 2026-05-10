@@ -19,6 +19,7 @@
 
 - 多服务器封禁记录聚合展示
 - 服务器在线状态监控（心跳检测）
+- 3D 地球可视化（Globe.gl）：交互式全屏地球，按国家展示攻击来源
 - 封禁记录筛选（按 IP、Jail、状态）
 - 安全威胁等级可视化（8 小时时间线）
 - IP 地址脱敏显示
@@ -34,10 +35,10 @@ curl -sSL https://raw.githubusercontent.com/strobe111/Fail2ban/master/f2b.sh | b
 
 ## 管理脚本
 
-安装后继续使用 `f2b.sh` 管理一切：
+安装后可在服务器上直接使用 `f2b` 命令：
 
 ```bash
-./f2b.sh
+f2b
 ```
 
 菜单选项：
@@ -77,14 +78,15 @@ F2BHub/
 │   ├── api.py                # Agent 数据接收 API
 │   ├── views.py              # Web 页面路由
 │   ├── models.py             # 数据模型 (Server, Ban)
+│   ├── geoip.py              # IP 国家查询（ip-api.com，带缓存）
 │   ├── templates/            # Jinja2 模板
-│   │   ├── base.html         # 基础布局
+│   │   ├── base.html         # 基础布局（含 3D 地球容器）
 │   │   ├── dashboard.html    # 概览页
 │   │   ├── servers.html      # 服务器列表
 │   │   ├── server_detail.html # 单服务器详情
 │   │   └── bans.html         # 封禁记录列表
 │   └── static/
-│       └── style.css         # 暗色主题样式
+│       └── style.css         # 暗色玻璃态主题样式
 ├── agent/                    # 部署到远程服务器
 │   ├── f2b_agent.py          # Agent 主脚本
 │   ├── agent.conf            # Agent 配置模板
@@ -101,6 +103,7 @@ F2BHub/
 
 | 端点 | 方法 | 认证 | 说明 |
 |------|------|------|------|
+| `/api/globe` | GET | 无 | 地球可视化数据（国家级封禁统计） |
 | `/api/report` | POST | X-API-Key | Agent 推送封禁记录 |
 | `/api/heartbeat` | POST | X-API-Key | Agent 心跳（60s 间隔） |
 | `/api/agent/f2b_agent_install.sh` | GET | 无 | 下载 Agent 远程安装脚本 |
@@ -146,5 +149,7 @@ curl -sSL http://<HUB_IP>:5001/api/agent/f2b_agent_install.sh | bash -s -- \
 
 - Python 3 / Flask
 - SQLAlchemy + SQLite
+- Globe.gl（3D 地球可视化）
+- flag-icons（SVG 国旗图标）
 - 原生 fail2ban
-- 暗色 GitHub 风格 UI
+- 暗色玻璃态 UI
