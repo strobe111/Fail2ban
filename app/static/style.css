@@ -41,7 +41,7 @@ input, textarea, [contenteditable] { caret-color: auto; }
     box-shadow: 0 0 20px rgba(0,255,255,0.6), 0 4px 10px rgba(0,0,0,0.5);
     transform: translateY(-25px); backdrop-filter: blur(8px); font-weight: 600;
 }
-.earth-label-card .flag-emoji { font-size: 16px; }
+.earth-label-card .fi { width: 20px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; background-size: contain; background-position: center; background-repeat: no-repeat; border-radius: 2px; }
 
 #main-content {
     width: 60vw;
