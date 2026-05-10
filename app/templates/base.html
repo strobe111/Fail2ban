@@ -110,7 +110,9 @@
         'CZ':[49.82,15.47],'HU':[47.16,19.50],'RO':[45.94,24.97],'BG':[42.73,25.49],
         'GR':[39.07,21.82],'UA':[48.38,31.17],'RU':[61.52,105.32],'ZA':[-30.56,22.94],
         'EG':[26.82,30.80],'NG':[9.08,8.68],'KE':[-0.02,37.91],'ET':[9.15,40.49],
-        'MA':[31.79,-7.09],'DZ':[28.03,1.66],'GH':[7.95,-1.02]
+        'MA':[31.79,-7.09],'DZ':[28.03,1.66],'GH':[7.95,-1.02],'BO':[-16.29,-63.59],
+        'CM':[7.37,12.35],'DO':[18.74,-70.16],'EC':[-1.83,-78.18],'GE':[42.32,43.36],
+        'LA':[19.86,102.50],'NC':[-22.27,166.46]
     };
 
     var FLAG_EMOJI = {
@@ -123,12 +125,16 @@
         'PT':'🇵🇹','NL':'🇳🇱','BE':'🇧🇪','CH':'🇨🇭','AT':'🇦🇹','SE':'🇸🇪','NO':'🇳🇴',
         'FI':'🇫🇮','DK':'🇩🇰','PL':'🇵🇱','CZ':'🇨🇿','HU':'🇭🇺','RO':'🇷🇴','BG':'🇧🇬',
         'GR':'🇬🇷','UA':'🇺🇦','RU':'🇷🇺','ZA':'🇿🇦','EG':'🇪🇬','NG':'🇳🇬','KE':'🇰🇪',
-        'ET':'🇪🇹','MA':'🇲🇦','DZ':'🇩🇿','GH':'🇬🇭'
+        'ET':'🇪🇹','MA':'🇲🇦','DZ':'🇩🇿','GH':'🇬🇭','BO':'🇧🇴','CM':'🇨🇲','DO':'🇩🇴',
+        'EC':'🇪🇨','GE':'🇬🇪','LA':'🇱🇦','NC':'🇳🇨'
     };
 
     var globeContainer = document.getElementById('globe-container');
     var renderArea = document.getElementById('globe-render');
     var globeInst = null;
+
+    var SERVER_LAT = 49.44;
+    var SERVER_LNG = 11.02;
 
     function loadGlobe() {
         fetch('/api/globe').then(function(r) { return r.json(); }).then(function(data) {
@@ -141,25 +147,19 @@
     function buildGlobe(countries) {
         var points = [];
         var arcs = [];
-        var centerCoord = null;
 
         countries.forEach(function(c) {
             var coord = COORD_MAP[c.code];
             if (!coord) return;
-            if (!centerCoord) centerCoord = coord;
             points.push({ code: c.code, lat: coord[0], lng: coord[1], total: c.total, active: c.active });
         });
 
-        if (centerCoord) {
-            points.forEach(function(p) {
-                if (p.code !== countries[0].code) {
-                    arcs.push({
-                        startLat: centerCoord[0], startLng: centerCoord[1],
-                        endLat: p.lat, endLng: p.lng
-                    });
-                }
+        points.forEach(function(p) {
+            arcs.push({
+                startLat: SERVER_LAT, startLng: SERVER_LNG,
+                endLat: p.lat, endLng: p.lng
             });
-        }
+        });
 
         if (globeInst) {
             globeInst.pointsData(points);
@@ -215,9 +215,9 @@
         globe.arcStroke(1.2);
         globe.arcAltitude(0.3);
 
-        var center = countries.find(function(c) { return c.code === 'CN'; }) || countries[0];
-        var cc = COORD_MAP[center.code] || [20, 0];
-        globe.pointOfView({ lat: 20, lng: 120, altitude: 2.2 }, 0);
+        var center = countries.find(function(c) { return c.code === 'DE'; }) || countries[0];
+        var cc = COORD_MAP[center.code] || [49.44, 11.02];
+        globe.pointOfView({ lat: 49.44, lng: 11.02, altitude: 2.2 }, 0);
 
         globe.controls().autoRotate = true;
         globe.controls().autoRotateSpeed = 0.4;
