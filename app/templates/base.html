@@ -156,8 +156,8 @@
 
         points.forEach(function(p) {
             arcs.push({
-                startLat: SERVER_LAT, startLng: SERVER_LNG,
-                endLat: p.lat, endLng: p.lng
+                startLat: p.lat, startLng: p.lng,
+                endLat: SERVER_LAT, endLng: SERVER_LNG
             });
         });
 
